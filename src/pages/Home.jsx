@@ -118,7 +118,7 @@ export function Home({ workouts, onStart, onEdit, onDeleteWorkout, onNewWorkout,
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-surface">
       {/* Header */}
-      <header className="px-5 pt-14 pb-2 flex-shrink-0 safe-top">
+      <header className="px-5 pb-2 flex-shrink-0" style={{ paddingTop: 'calc(env(safe-area-inset-top, 20px) + 48px)' }}>
         <p className="text-[15px] text-text-secondary font-medium">{getGreeting()}</p>
         <h1 className="text-[32px] font-bold text-text-primary leading-tight tracking-tight mt-0.5">
           Time to Exercise!
