@@ -331,7 +331,7 @@ export function Session({ session, progress, currentExerciseIndex, isComplete, o
       {/* Scrollable page — header + exercise panel + list all scroll together */}
       <div className="flex-1 scroll-area">
         {/* Header */}
-        <header className="px-5 pt-14 pb-4 bg-card card-shadow safe-top">
+        <header className="px-5 pt-16 pb-4 bg-card card-shadow safe-top">
           <div className="flex items-center justify-between mb-3">
             <div className="flex-1 min-w-0">
               <h1 className="text-[18px] font-bold text-text-primary leading-tight truncate">{session.workoutName}</h1>
