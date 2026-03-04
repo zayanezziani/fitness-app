@@ -328,80 +328,83 @@ export function Session({ session, progress, currentExerciseIndex, isComplete, o
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-surface">
-      {/* Header */}
-      <header className="px-5 pt-6 pb-4 flex-shrink-0 safe-top bg-card card-shadow">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex-1 min-w-0">
-            <h1 className="text-[18px] font-bold text-text-primary leading-tight truncate">{session.workoutName}</h1>
-            <div className="flex items-center gap-2 mt-1">
-              <Clock size={13} className="text-text-tertiary" />
-              <span className="text-[13px] text-text-secondary font-medium">{elapsed}</span>
+      {/* Scrollable page — header + exercise panel + list all scroll together */}
+      <div className="flex-1 scroll-area">
+        {/* Header */}
+        <header className="px-5 pt-14 pb-4 bg-card card-shadow safe-top">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-[18px] font-bold text-text-primary leading-tight truncate">{session.workoutName}</h1>
+              <div className="flex items-center gap-2 mt-1">
+                <Clock size={13} className="text-text-tertiary" />
+                <span className="text-[13px] text-text-secondary font-medium">{elapsed}</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <ProgressRing pct={progress.pct} />
+              <button
+                onClick={onDiscardSession}
+                className="w-8 h-8 rounded-full bg-elevated flex items-center justify-center press-effect"
+              >
+                <X size={16} className="text-text-secondary" />
+              </button>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <ProgressRing pct={progress.pct} />
+          {/* Progress summary */}
+          <div className="flex items-center gap-4 text-[12px] text-text-secondary">
+            <span>{progress.done}/{progress.total} sets</span>
+            <span className="w-1 h-1 rounded-full bg-text-tertiary" />
+            <span>{progress.totalReps} reps</span>
+            <span className="w-1 h-1 rounded-full bg-text-tertiary" />
+            <span>{session.exercises.length} exercises</span>
+          </div>
+        </header>
+
+        {/* Content */}
+        <div className="px-5 pt-4 pb-6 flex flex-col gap-4">
+          {/* Current / focused exercise */}
+          <CurrentExercisePanel
+            sessionEx={session.exercises[focusedIndex]}
+            exerciseIndex={focusedIndex}
+            totalExercises={session.exercises.length}
+            onToggleSet={onToggleSet}
+            onUpdateReps={onUpdateReps}
+            onNext={handleNextExercise}
+            isLast={focusedIndex === session.exercises.length - 1}
+          />
+
+          {/* Exercise list overview */}
+          {session.exercises.length > 1 && (
+            <div>
+              <p className="text-[12px] font-semibold text-text-tertiary uppercase tracking-widest mb-3 px-1">
+                All Exercises
+              </p>
+              <div className="flex flex-col gap-2">
+                {session.exercises.map((ex, i) => (
+                  <button
+                    key={ex.workoutExerciseId}
+                    onClick={() => setFocusedIndex(i)}
+                    className="press-effect text-left"
+                  >
+                    <UpcomingChip sessionEx={ex} isFocused={i === focusedIndex} />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* End session early */}
+          {progress.done > 0 && (
             <button
-              onClick={onDiscardSession}
-              className="w-8 h-8 rounded-full bg-elevated flex items-center justify-center press-effect"
+              onClick={onEndSession}
+              className="w-full py-3.5 rounded-2xl border-2 border-border-subtle text-[14px] font-semibold text-text-secondary press-effect"
             >
-              <X size={16} className="text-text-secondary" />
+              End Session Early
             </button>
-          </div>
+          )}
         </div>
-
-        {/* Progress summary */}
-        <div className="flex items-center gap-4 text-[12px] text-text-secondary">
-          <span>{progress.done}/{progress.total} sets</span>
-          <span className="w-1 h-1 rounded-full bg-text-tertiary" />
-          <span>{progress.totalReps} reps</span>
-          <span className="w-1 h-1 rounded-full bg-text-tertiary" />
-          <span>{session.exercises.length} exercises</span>
-        </div>
-      </header>
-
-      {/* Main content */}
-      <div className="flex-1 scroll-area px-5 pt-4 pb-6 flex flex-col gap-4">
-        {/* Current / focused exercise */}
-        <CurrentExercisePanel
-          sessionEx={session.exercises[focusedIndex]}
-          exerciseIndex={focusedIndex}
-          totalExercises={session.exercises.length}
-          onToggleSet={onToggleSet}
-          onUpdateReps={onUpdateReps}
-          onNext={handleNextExercise}
-          isLast={focusedIndex === session.exercises.length - 1}
-        />
-
-        {/* Exercise list overview */}
-        {session.exercises.length > 1 && (
-          <div>
-            <p className="text-[12px] font-semibold text-text-tertiary uppercase tracking-widest mb-3 px-1">
-              All Exercises
-            </p>
-            <div className="flex flex-col gap-2">
-              {session.exercises.map((ex, i) => (
-                <button
-                  key={ex.workoutExerciseId}
-                  onClick={() => setFocusedIndex(i)}
-                  className="press-effect text-left"
-                >
-                  <UpcomingChip sessionEx={ex} isFocused={i === focusedIndex} />
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* End session early */}
-        {progress.done > 0 && (
-          <button
-            onClick={onEndSession}
-            className="w-full py-3.5 rounded-2xl border-2 border-border-subtle text-[14px] font-semibold text-text-secondary press-effect"
-          >
-            End Session Early
-          </button>
-        )}
       </div>
     </div>
   )

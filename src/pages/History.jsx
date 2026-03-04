@@ -103,7 +103,7 @@ export function History() {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-surface">
-      <header className="px-5 pt-8 pb-4 flex-shrink-0 safe-top">
+      <header className="px-5 pt-14 pb-4 flex-shrink-0 safe-top">
         <h1 className="text-[32px] font-bold text-text-primary tracking-tight">History</h1>
         <p className="text-[14px] text-text-secondary mt-0.5">
           {history.length === 0 ? 'No sessions yet' : `${history.length} session${history.length !== 1 ? 's' : ''} completed`}
