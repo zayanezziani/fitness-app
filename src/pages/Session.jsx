@@ -96,11 +96,7 @@ function CurrentExercisePanel({ sessionEx, exerciseIndex, totalExercises, onTogg
           </div>
           <h2 className="text-xl font-black text-white leading-tight">{ex?.name}</h2>
           <p className="text-sm text-zinc-500 mt-1">
-            {sessionEx.sets.length} sets × {sessionEx.sets[0] ? (
-              // reps come from workout config — we don't store per-set reps in session,
-              // but we can infer from the count. Show set count anyway.
-              `${doneSets}/${sessionEx.sets.length} done`
-            ) : null}
+            {sessionEx.sets.length} sets{sessionEx.targetReps ? ` × ${sessionEx.targetReps} reps` : ''} · {doneSets}/{sessionEx.sets.length} done
           </p>
         </div>
       </div>
@@ -161,7 +157,7 @@ function UpcomingChip({ sessionEx, index }) {
       <ExerciseIcon exerciseId={sessionEx.exerciseId} size="sm" />
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-white truncate">{ex?.name}</p>
-        <p className="text-xs text-zinc-600">{sessionEx.sets.length} sets</p>
+        <p className="text-xs text-zinc-600">{sessionEx.sets.length} sets{sessionEx.targetReps ? ` × ${sessionEx.targetReps} reps` : ''}</p>
       </div>
       {allDone && (
         <CheckCircle2 size={16} className="text-green-500 flex-shrink-0" />
