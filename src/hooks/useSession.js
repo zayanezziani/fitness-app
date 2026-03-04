@@ -6,6 +6,7 @@ function buildSessionExercises(workoutExercises) {
   return workoutExercises.map(ex => ({
     workoutExerciseId: ex.id,
     exerciseId: ex.exerciseId,
+    targetReps: ex.reps,
     sets: Array.from({ length: ex.sets }, (_, i) => ({
       index: i,
       completed: false,

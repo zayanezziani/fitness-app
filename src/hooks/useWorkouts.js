@@ -60,9 +60,17 @@ function loadInitial() {
 export function useWorkouts() {
   const [workouts, setWorkouts] = useState(loadInitial)
 
-  const persist = useCallback((next) => {
-    setWorkouts(next)
-    storage.saveWorkouts(next)
+  const persist = useCallback((nextOrUpdater) => {
+    if (typeof nextOrUpdater === 'function') {
+      setWorkouts(prev => {
+        const next = nextOrUpdater(prev)
+        storage.saveWorkouts(next)
+        return next
+      })
+    } else {
+      setWorkouts(nextOrUpdater)
+      storage.saveWorkouts(nextOrUpdater)
+    }
   }, [])
 
   const createWorkout = useCallback((name) => {
