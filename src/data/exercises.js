@@ -1,10 +1,10 @@
 export const CATEGORIES = {
-  chest:     { name: 'Chest',     color: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
-  back:      { name: 'Back',      color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
-  shoulders: { name: 'Shoulders', color: '#a855f7', bg: 'rgba(168,85,247,0.12)' },
-  arms:      { name: 'Arms',      color: '#f97316', bg: 'rgba(249,115,22,0.12)' },
-  legs:      { name: 'Legs',      color: '#22c55e', bg: 'rgba(34,197,94,0.12)' },
-  core:      { name: 'Core',      color: '#eab308', bg: 'rgba(234,179,8,0.12)' },
+  chest:     { name: 'Chest',     color: '#ff2d55', bg: 'rgba(255,45,85,0.10)' },
+  back:      { name: 'Back',      color: '#5856d6', bg: 'rgba(88,86,214,0.10)' },
+  shoulders: { name: 'Shoulders', color: '#af52de', bg: 'rgba(175,82,222,0.10)' },
+  arms:      { name: 'Arms',      color: '#ff9500', bg: 'rgba(255,149,0,0.10)' },
+  legs:      { name: 'Legs',      color: '#34c759', bg: 'rgba(52,199,89,0.10)' },
+  core:      { name: 'Core',      color: '#ffcc00', bg: 'rgba(255,204,0,0.12)' },
 }
 
 // icon: which SVG pictogram to display

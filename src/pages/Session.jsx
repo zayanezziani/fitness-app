@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react'
-import { X, CheckCircle2, ChevronRight, Trophy, RotateCcw, Clock } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { X, ChevronRight, Trophy, Clock, Check, Minus, Plus } from 'lucide-react'
 import { getExercise, CATEGORIES } from '../data/exercises.js'
 import { ExerciseIcon } from '../components/ExerciseIcon.jsx'
 
@@ -22,13 +22,57 @@ function useElapsed(startedAt) {
     : `${m}:${String(s).padStart(2, '0')}`
 }
 
-// ── Set button ────────────────────────────────────────────────────────────────
+// ── Progress Ring ─────────────────────────────────────────────────────────────
 
-function SetButton({ setIndex, completed, onToggle, catColor }) {
+function ProgressRing({ pct, size = 56, stroke = 5, color = '#ff2d55' }) {
+  const r = (size - stroke) / 2
+  const circ = 2 * Math.PI * r
+  const offset = circ - (pct / 100) * circ
+
+  return (
+    <svg width={size} height={size} className="flex-shrink-0">
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={r}
+        fill="none"
+        stroke="rgba(0,0,0,0.06)"
+        strokeWidth={stroke}
+      />
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={r}
+        fill="none"
+        stroke={color}
+        strokeWidth={stroke}
+        strokeLinecap="round"
+        strokeDasharray={circ}
+        strokeDashoffset={offset}
+        className="progress-ring-circle"
+      />
+      <text
+        x="50%"
+        y="50%"
+        textAnchor="middle"
+        dominantBaseline="central"
+        fill={color}
+        fontSize="13"
+        fontWeight="700"
+      >
+        {pct}%
+      </text>
+    </svg>
+  )
+}
+
+// ── Set Row (inline rep tracking) ─────────────────────────────────────────────
+
+function SetRow({ set, setIndex, targetReps, onToggle, onUpdateReps, catColor }) {
   const [animating, setAnimating] = useState(false)
 
-  function handlePress() {
-    if (!completed) {
+  function handleComplete() {
+    if (!set.completed) {
       setAnimating(true)
       setTimeout(() => setAnimating(false), 300)
     }
@@ -36,93 +80,114 @@ function SetButton({ setIndex, completed, onToggle, catColor }) {
   }
 
   return (
-    <button
-      onClick={handlePress}
-      className="flex-1 flex flex-col items-center gap-2 py-4 rounded-2xl border-2 transition-all press-effect"
-      style={
-        completed
-          ? { backgroundColor: 'rgba(34,197,94,0.15)', borderColor: '#22c55e', transform: animating ? 'scale(0.92)' : 'scale(1)' }
-          : { backgroundColor: '#1c1c1c', borderColor: '#2a2a2a' }
-      }
+    <div
+      className="flex items-center gap-3 px-4 py-3 rounded-2xl transition-all"
+      style={{
+        backgroundColor: set.completed ? 'rgba(52,199,89,0.08)' : '#f2f2f7',
+      }}
     >
-      <span
-        className="text-xs font-bold uppercase tracking-wider"
-        style={{ color: completed ? '#22c55e' : '#6b7280' }}
-      >
+      {/* Set label */}
+      <span className="text-[13px] font-semibold text-text-secondary w-12">
         Set {setIndex + 1}
       </span>
-      <div
-        className="w-8 h-8 rounded-full flex items-center justify-center transition-all"
-        style={
-          completed
-            ? { backgroundColor: '#22c55e' }
-            : { backgroundColor: '#252525', border: '2px solid #3a3a3a' }
-        }
-      >
-        {completed && (
-          <svg viewBox="0 0 14 14" width="16" height="16" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="2,7 5.5,10.5 12,3.5" />
-          </svg>
-        )}
+
+      {/* Rep counter */}
+      <div className="flex-1 flex items-center justify-center gap-3">
+        <button
+          onClick={() => onUpdateReps(Math.max(0, (set.reps || targetReps) - 1))}
+          className="w-8 h-8 rounded-full bg-white card-shadow flex items-center justify-center press-effect"
+        >
+          <Minus size={14} className="text-text-secondary" />
+        </button>
+        <div className="text-center min-w-[60px]">
+          <span className="text-[22px] font-bold text-text-primary">{set.reps || targetReps}</span>
+          <span className="text-[12px] text-text-tertiary ml-1">/ {targetReps}</span>
+        </div>
+        <button
+          onClick={() => onUpdateReps((set.reps || targetReps) + 1)}
+          className="w-8 h-8 rounded-full bg-white card-shadow flex items-center justify-center press-effect"
+        >
+          <Plus size={14} className="text-text-secondary" />
+        </button>
       </div>
-    </button>
+
+      {/* Complete button */}
+      <button
+        onClick={handleComplete}
+        className="w-10 h-10 rounded-full flex items-center justify-center press-effect transition-all"
+        style={{
+          backgroundColor: set.completed ? '#34c759' : 'white',
+          boxShadow: set.completed ? 'none' : '0 1px 3px rgba(0,0,0,0.08)',
+          transform: animating ? 'scale(1.2)' : 'scale(1)',
+        }}
+      >
+        {set.completed ? (
+          <Check size={18} color="white" strokeWidth={3} className="animate-check-pop" />
+        ) : (
+          <div className="w-5 h-5 rounded-full border-2 border-gray-300" />
+        )}
+      </button>
+    </div>
   )
 }
 
-// ── Exercise panel (current exercise) ────────────────────────────────────────
+// ── Current Exercise Panel ────────────────────────────────────────────────────
 
-function CurrentExercisePanel({ sessionEx, exerciseIndex, totalExercises, onToggleSet, onNext, isLast }) {
+function CurrentExercisePanel({ sessionEx, exerciseIndex, totalExercises, onToggleSet, onUpdateReps, onNext, isLast }) {
   const ex = getExercise(sessionEx.exerciseId)
   const cat = CATEGORIES[ex?.category] ?? CATEGORIES.chest
   const allDone = sessionEx.sets.every(s => s.completed)
   const doneSets = sessionEx.sets.filter(s => s.completed).length
 
   return (
-    <div className="bg-card rounded-3xl border border-border-subtle overflow-hidden animate-fade-in">
+    <div className="bg-card rounded-3xl card-shadow overflow-hidden animate-fade-in">
       {/* Exercise header */}
       <div className="px-5 pt-5 pb-4 flex items-center gap-4">
         <ExerciseIcon exerciseId={sessionEx.exerciseId} size="lg" />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <span
-              className="text-xs font-bold uppercase tracking-widest"
+              className="text-[11px] font-bold uppercase tracking-widest"
               style={{ color: cat.color }}
             >
               {cat.name}
             </span>
-            <span className="text-xs text-zinc-600">
-              {exerciseIndex + 1}/{totalExercises}
+            <span className="text-[11px] text-text-tertiary font-medium">
+              {exerciseIndex + 1} of {totalExercises}
             </span>
           </div>
-          <h2 className="text-xl font-black text-white leading-tight">{ex?.name}</h2>
-          <p className="text-sm text-zinc-500 mt-1">
-            {sessionEx.sets.length} sets{sessionEx.targetReps ? ` × ${sessionEx.targetReps} reps` : ''} · {doneSets}/{sessionEx.sets.length} done
+          <h2 className="text-[20px] font-bold text-text-primary leading-tight">{ex?.name}</h2>
+          <p className="text-[13px] text-text-secondary mt-1">
+            {doneSets}/{sessionEx.sets.length} sets complete
+            {sessionEx.targetReps ? ` · ${sessionEx.targetReps} reps target` : ''}
           </p>
         </div>
       </div>
 
       {/* Set progress bar */}
-      <div className="px-5 pb-4">
+      <div className="px-5 pb-3">
         <div className="h-1.5 bg-elevated rounded-full overflow-hidden">
           <div
             className="h-full rounded-full transition-all duration-500"
             style={{
               width: `${(doneSets / sessionEx.sets.length) * 100}%`,
-              backgroundColor: allDone ? '#22c55e' : cat.color,
+              backgroundColor: allDone ? '#34c759' : cat.color,
             }}
           />
         </div>
       </div>
 
-      {/* Set buttons */}
-      <div className="px-4 pb-4 flex gap-3">
+      {/* Set rows with rep tracking */}
+      <div className="px-4 pb-4 flex flex-col gap-2">
         {sessionEx.sets.map((s, si) => (
-          <SetButton
+          <SetRow
             key={si}
+            set={s}
             setIndex={si}
-            completed={s.completed}
+            targetReps={sessionEx.targetReps}
             catColor={cat.color}
             onToggle={() => onToggleSet(exerciseIndex, si)}
+            onUpdateReps={(reps) => onUpdateReps(exerciseIndex, si, reps)}
           />
         ))}
       </div>
@@ -131,7 +196,7 @@ function CurrentExercisePanel({ sessionEx, exerciseIndex, totalExercises, onTogg
       {allDone && !isLast && (
         <button
           onClick={onNext}
-          className="w-full flex items-center justify-center gap-2 py-4 border-t border-border-subtle font-bold text-sm press-effect animate-fade-in"
+          className="w-full flex items-center justify-center gap-2 py-4 border-t border-border-subtle font-semibold text-[14px] press-effect animate-fade-in"
           style={{ color: cat.color }}
         >
           Next Exercise
@@ -144,23 +209,33 @@ function CurrentExercisePanel({ sessionEx, exerciseIndex, totalExercises, onTogg
 
 // ── Upcoming exercise chip ────────────────────────────────────────────────────
 
-function UpcomingChip({ sessionEx, index }) {
+function UpcomingChip({ sessionEx, isFocused }) {
   const ex = getExercise(sessionEx.exerciseId)
+  const cat = CATEGORIES[ex?.category] ?? CATEGORIES.chest
   const doneSets = sessionEx.sets.filter(s => s.completed).length
   const allDone = doneSets === sessionEx.sets.length
+  const totalReps = sessionEx.sets.reduce((a, s) => a + (s.reps || 0), 0)
 
   return (
     <div
-      className="flex items-center gap-3 bg-card rounded-2xl px-3 py-2.5 border border-border-subtle"
-      style={allDone ? { opacity: 0.4 } : {}}
+      className="flex items-center gap-3 bg-card rounded-2xl px-4 py-3 card-shadow transition-all"
+      style={{
+        opacity: allDone && !isFocused ? 0.5 : 1,
+        border: isFocused ? `2px solid ${cat.color}` : '2px solid transparent',
+      }}
     >
       <ExerciseIcon exerciseId={sessionEx.exerciseId} size="sm" />
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-white truncate">{ex?.name}</p>
-        <p className="text-xs text-zinc-600">{sessionEx.sets.length} sets{sessionEx.targetReps ? ` × ${sessionEx.targetReps} reps` : ''}</p>
+        <p className="text-[14px] font-semibold text-text-primary truncate">{ex?.name}</p>
+        <p className="text-[12px] text-text-secondary">
+          {doneSets}/{sessionEx.sets.length} sets
+          {allDone && totalReps > 0 ? ` · ${totalReps} reps` : sessionEx.targetReps ? ` · ${sessionEx.targetReps} reps target` : ''}
+        </p>
       </div>
       {allDone && (
-        <CheckCircle2 size={16} className="text-green-500 flex-shrink-0" />
+        <div className="w-6 h-6 rounded-full bg-success flex items-center justify-center flex-shrink-0">
+          <Check size={14} color="white" strokeWidth={3} />
+        </div>
       )}
     </div>
   )
@@ -169,44 +244,48 @@ function UpcomingChip({ sessionEx, index }) {
 // ── Completion screen ─────────────────────────────────────────────────────────
 
 function CompletionScreen({ session, progress, elapsed, onFinish, onDiscard }) {
+  const totalReps = session.exercises.reduce(
+    (a, ex) => a + ex.sets.reduce((b, s) => b + (s.reps || 0), 0), 0
+  )
+
   return (
-    <div className="flex-1 flex flex-col items-center justify-center px-5 py-10 text-center animate-fade-in">
+    <div className="flex-1 flex flex-col items-center justify-center px-5 py-10 text-center bg-surface animate-fade-in">
       <div
         className="w-24 h-24 rounded-full flex items-center justify-center mb-6 animate-bounce-in"
-        style={{ backgroundColor: 'rgba(34,197,94,0.15)', border: '2px solid #22c55e' }}
+        style={{ backgroundColor: 'rgba(52,199,89,0.12)' }}
       >
-        <Trophy size={40} className="text-green-500" />
+        <Trophy size={40} className="text-success" />
       </div>
 
-      <h2 className="text-3xl font-black text-white mb-2">Crushed it! 💪</h2>
-      <p className="text-zinc-400 text-sm mb-8">{session.workoutName}</p>
+      <h2 className="text-[28px] font-bold text-text-primary mb-2">Workout Complete!</h2>
+      <p className="text-text-secondary text-[15px] mb-8">{session.workoutName}</p>
 
-      {/* Stats */}
-      <div className="flex gap-4 mb-10">
-        <div className="bg-card rounded-2xl px-6 py-4 border border-border-subtle">
-          <p className="text-2xl font-black text-white">{progress.done}</p>
-          <p className="text-xs text-zinc-500 mt-1">Sets done</p>
+      {/* Stats row */}
+      <div className="flex gap-3 mb-10 w-full max-w-xs">
+        <div className="flex-1 bg-card rounded-2xl px-4 py-4 card-shadow text-center">
+          <p className="text-[24px] font-bold text-text-primary">{progress.done}</p>
+          <p className="text-[11px] text-text-secondary mt-1 uppercase tracking-wide font-medium">Sets</p>
         </div>
-        <div className="bg-card rounded-2xl px-6 py-4 border border-border-subtle">
-          <p className="text-2xl font-black text-white">{elapsed}</p>
-          <p className="text-xs text-zinc-500 mt-1">Duration</p>
+        <div className="flex-1 bg-card rounded-2xl px-4 py-4 card-shadow text-center">
+          <p className="text-[24px] font-bold text-text-primary">{totalReps}</p>
+          <p className="text-[11px] text-text-secondary mt-1 uppercase tracking-wide font-medium">Reps</p>
         </div>
-        <div className="bg-card rounded-2xl px-6 py-4 border border-border-subtle">
-          <p className="text-2xl font-black text-white">{session.exercises.length}</p>
-          <p className="text-xs text-zinc-500 mt-1">Exercises</p>
+        <div className="flex-1 bg-card rounded-2xl px-4 py-4 card-shadow text-center">
+          <p className="text-[24px] font-bold text-text-primary">{elapsed}</p>
+          <p className="text-[11px] text-text-secondary mt-1 uppercase tracking-wide font-medium">Time</p>
         </div>
       </div>
 
       <button
         onClick={onFinish}
-        className="w-full py-4 rounded-2xl font-bold text-white text-base mb-3 press-effect"
-        style={{ backgroundColor: '#22c55e' }}
+        className="w-full max-w-xs py-4 rounded-2xl font-semibold text-white text-[16px] press-effect"
+        style={{ backgroundColor: '#34c759', boxShadow: '0 4px 14px rgba(52,199,89,0.3)' }}
       >
         Finish Session
       </button>
       <button
         onClick={onDiscard}
-        className="text-sm text-zinc-500 py-2 press-effect"
+        className="text-[14px] text-text-tertiary py-3 mt-2 press-effect"
       >
         Discard session
       </button>
@@ -216,13 +295,12 @@ function CompletionScreen({ session, progress, elapsed, onFinish, onDiscard }) {
 
 // ── Session page ──────────────────────────────────────────────────────────────
 
-export function Session({ session, progress, currentExerciseIndex, isComplete, onToggleSet, onEndSession, onDiscardSession }) {
+export function Session({ session, progress, currentExerciseIndex, isComplete, onToggleSet, onUpdateReps, onEndSession, onDiscardSession }) {
   const elapsed = useElapsed(session.startedAt)
   const [focusedIndex, setFocusedIndex] = useState(
     currentExerciseIndex >= 0 ? currentExerciseIndex : 0
   )
 
-  // Auto-advance focus to next incomplete exercise
   useEffect(() => {
     if (currentExerciseIndex >= 0) {
       setFocusedIndex(currentExerciseIndex)
@@ -248,82 +326,80 @@ export function Session({ session, progress, currentExerciseIndex, isComplete, o
     )
   }
 
-  const pct = progress.pct
-
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="flex-1 flex flex-col overflow-hidden bg-surface">
       {/* Header */}
-      <header className="px-5 pt-5 pb-4 flex-shrink-0 safe-top">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-lg font-black text-white leading-tight">{session.workoutName}</h1>
-            <div className="flex items-center gap-2 mt-0.5">
-              <Clock size={12} className="text-zinc-500" />
-              <span className="text-xs text-zinc-500">{elapsed}</span>
+      <header className="px-5 pt-6 pb-4 flex-shrink-0 safe-top bg-card card-shadow">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-[18px] font-bold text-text-primary leading-tight truncate">{session.workoutName}</h1>
+            <div className="flex items-center gap-2 mt-1">
+              <Clock size={13} className="text-text-tertiary" />
+              <span className="text-[13px] text-text-secondary font-medium">{elapsed}</span>
             </div>
           </div>
-          <button
-            onClick={onDiscardSession}
-            className="p-2 press-effect"
-          >
-            <X size={20} className="text-zinc-500" />
-          </button>
+
+          <div className="flex items-center gap-3">
+            <ProgressRing pct={progress.pct} />
+            <button
+              onClick={onDiscardSession}
+              className="w-8 h-8 rounded-full bg-elevated flex items-center justify-center press-effect"
+            >
+              <X size={16} className="text-text-secondary" />
+            </button>
+          </div>
         </div>
 
-        {/* Overall progress bar */}
-        <div className="flex items-center gap-3">
-          <div className="flex-1 h-2 bg-elevated rounded-full overflow-hidden">
-            <div
-              className="h-full rounded-full transition-all duration-700"
-              style={{ width: `${pct}%`, backgroundColor: '#ef4444' }}
-            />
-          </div>
-          <span className="text-xs font-bold text-zinc-400 w-12 text-right">
-            {progress.done}/{progress.total}
-          </span>
+        {/* Progress summary */}
+        <div className="flex items-center gap-4 text-[12px] text-text-secondary">
+          <span>{progress.done}/{progress.total} sets</span>
+          <span className="w-1 h-1 rounded-full bg-text-tertiary" />
+          <span>{progress.totalReps} reps</span>
+          <span className="w-1 h-1 rounded-full bg-text-tertiary" />
+          <span>{session.exercises.length} exercises</span>
         </div>
       </header>
 
       {/* Main content */}
-      <div className="flex-1 scroll-area px-5 pb-6 flex flex-col gap-5">
+      <div className="flex-1 scroll-area px-5 pt-4 pb-6 flex flex-col gap-4">
         {/* Current / focused exercise */}
         <CurrentExercisePanel
           sessionEx={session.exercises[focusedIndex]}
           exerciseIndex={focusedIndex}
           totalExercises={session.exercises.length}
           onToggleSet={onToggleSet}
+          onUpdateReps={onUpdateReps}
           onNext={handleNextExercise}
           isLast={focusedIndex === session.exercises.length - 1}
         />
 
         {/* Exercise list overview */}
-        <div>
-          <p className="text-xs font-bold text-zinc-600 uppercase tracking-widest mb-3">All Exercises</p>
-          <div className="flex flex-col gap-2">
-            {session.exercises.map((ex, i) => (
-              <button
-                key={ex.workoutExerciseId}
-                onClick={() => setFocusedIndex(i)}
-                className="press-effect text-left"
-              >
-                <div style={{
-                  outline: i === focusedIndex ? '2px solid rgba(239,68,68,0.5)' : 'none',
-                  borderRadius: '1rem',
-                }}>
-                  <UpcomingChip sessionEx={ex} index={i} />
-                </div>
-              </button>
-            ))}
+        {session.exercises.length > 1 && (
+          <div>
+            <p className="text-[12px] font-semibold text-text-tertiary uppercase tracking-widest mb-3 px-1">
+              All Exercises
+            </p>
+            <div className="flex flex-col gap-2">
+              {session.exercises.map((ex, i) => (
+                <button
+                  key={ex.workoutExerciseId}
+                  onClick={() => setFocusedIndex(i)}
+                  className="press-effect text-left"
+                >
+                  <UpcomingChip sessionEx={ex} isFocused={i === focusedIndex} />
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Finish session early */}
+        {/* End session early */}
         {progress.done > 0 && (
           <button
             onClick={onEndSession}
-            className="w-full py-4 rounded-2xl border border-border-subtle text-sm font-bold text-zinc-400 press-effect"
+            className="w-full py-3.5 rounded-2xl border-2 border-border-subtle text-[14px] font-semibold text-text-secondary press-effect"
           >
-            End Session
+            End Session Early
           </button>
         )}
       </div>
