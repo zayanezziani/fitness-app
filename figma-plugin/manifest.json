@@ -1,0 +1,7 @@
+{
+  "name": "Fitness App Screens",
+  "id": "fitness-app-screens-generator",
+  "api": "1.0.0",
+  "main": "code.js",
+  "editorType": ["figma"]
+}
