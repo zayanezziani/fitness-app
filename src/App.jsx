@@ -16,18 +16,14 @@ export default function App() {
     endSession,
     discardSession,
     completeSet,
+    updateSetReps,
     progress,
     currentExerciseIndex,
     isComplete,
   } = useSession()
 
-  // Tab navigation
   const [tab, setTab] = useState('home')
-
-  // Builder overlay state
-  const [builderState, setBuilderState] = useState(null) // null | { workoutId: string | null }
-
-  // ── Navigation helpers ──────────────────────────────────────────────────────
+  const [builderState, setBuilderState] = useState(null)
 
   function openNewWorkout() {
     setBuilderState({ workoutId: null })
@@ -43,11 +39,9 @@ export default function App() {
 
   function handleSaveWorkout({ name, exercises }) {
     if (builderState?.workoutId) {
-      // Editing existing
       updateWorkout(builderState.workoutId, { name })
       saveExercises(builderState.workoutId, exercises)
     } else {
-      // Creating new
       const id = createWorkout(name)
       saveExercises(id, exercises)
     }
@@ -73,16 +67,14 @@ export default function App() {
     deleteWorkout(id)
   }
 
-  // ── Render ──────────────────────────────────────────────────────────────────
-
-  // Builder overlay (slides over home tab)
+  // Builder overlay
   if (builderState !== null) {
     const existing = builderState.workoutId
       ? workouts.find(w => w.id === builderState.workoutId)
       : null
 
     return (
-      <div className="flex flex-col h-full bg-[#0a0a0a]">
+      <div className="flex flex-col h-full bg-surface">
         <Builder
           workout={existing}
           onSave={handleSaveWorkout}
@@ -93,8 +85,7 @@ export default function App() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-[#0a0a0a] relative">
-      {/* Main content area */}
+    <div className="flex flex-col h-full bg-surface relative">
       <div className="flex-1 flex flex-col overflow-hidden relative">
         {tab === 'home' && (
           <Home
@@ -116,6 +107,7 @@ export default function App() {
               currentExerciseIndex={currentExerciseIndex}
               isComplete={isComplete}
               onToggleSet={completeSet}
+              onUpdateReps={updateSetReps}
               onEndSession={handleEndSession}
               onDiscardSession={handleDiscardSession}
             />
@@ -127,7 +119,6 @@ export default function App() {
         {tab === 'history' && <History />}
       </div>
 
-      {/* Bottom nav */}
       <BottomNav
         current={tab}
         onNavigate={setTab}
@@ -139,21 +130,21 @@ export default function App() {
 
 function NoSession({ onGoHome }) {
   return (
-    <div className="flex-1 flex flex-col items-center justify-center px-5 text-center">
+    <div className="flex-1 flex flex-col items-center justify-center px-5 text-center bg-surface">
       <div
-        className="w-20 h-20 rounded-3xl flex items-center justify-center mb-5"
-        style={{ backgroundColor: 'rgba(239,68,68,0.1)' }}
+        className="w-20 h-20 rounded-full flex items-center justify-center mb-5"
+        style={{ backgroundColor: 'rgba(255,45,85,0.1)' }}
       >
         <span className="text-4xl">⚡</span>
       </div>
-      <h2 className="text-xl font-bold text-white mb-2">No active session</h2>
-      <p className="text-zinc-500 text-sm mb-8 max-w-[220px] leading-relaxed">
-        Go to Workouts and tap Start on a workout day to begin
+      <h2 className="text-[20px] font-bold text-text-primary mb-2">No active session</h2>
+      <p className="text-text-secondary text-[14px] mb-8 max-w-[220px] leading-relaxed">
+        Go to Workouts and tap Start to begin a workout
       </p>
       <button
         onClick={onGoHome}
-        className="px-6 py-3 rounded-2xl font-bold text-white press-effect"
-        style={{ backgroundColor: '#ef4444' }}
+        className="px-6 py-3.5 rounded-full font-semibold text-white press-effect"
+        style={{ backgroundColor: '#ff2d55', boxShadow: '0 4px 14px rgba(255,45,85,0.3)' }}
       >
         Browse Workouts
       </button>
